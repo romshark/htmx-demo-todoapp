@@ -49,23 +49,20 @@ func New(repo *repository.Repository) *Server {
 	})
 
 	// The following endpoints render navigable pages.
-	m.HandleFunc("GET /{$}", s.handleGetPageIndex)
-	m.HandleFunc("GET /search/{$}", s.handleGetPageSearch)
+	m.HandleFunc("GET /{$}", s.handleIndex)
 
 	// The following endpoints render HTMX components for partial reloads of frames.
 	// Non-HTMX requests are rejected with 400 Bad Request.
-	m.HandleFunc("GET /hx/search/{$}",
-		s.handleGetHXSearch)
 
 	// The matrix parameter "var=all" specifies that this endpoint is supposed to be
 	// used only from within the variant "all" of the frame "list" when action "toggle"
 	// is triggered.
-	m.HandleFunc("POST /hx/list/toggle/{id}/",
-		s.handlePostHXListToggle)
-	m.HandleFunc("PUT /hx/list/{$}",
-		s.handlePutHXListAdd)
-	m.HandleFunc("DELETE /hx/list/{id}/{$}",
-		s.handleDeleteHXList)
+	m.HandleFunc("POST /{id}/toggle/{$}",
+		s.handlePostToggleTodo)
+	m.HandleFunc("PUT /{$}",
+		s.handlePutIndex)
+	m.HandleFunc("DELETE /{id}/{$}",
+		s.handleDeleteTodo)
 
 	s.mux = m
 
@@ -80,42 +77,30 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.mux.ServeHTTP(w, r)
 }
 
-func (s *Server) handleGetPageIndex(w http.ResponseWriter, r *http.Request) {
-	list, err := s.repo.All()
-	if err != nil {
-		internalErr(w, err, "getting all todos", slog.Default())
-		return
-	}
-
-	headersNoCache(w)
-	render(w, r, pageIndex(list), "pageIndex")
-}
-
-func (s *Server) handleGetPageSearch(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	searchTerm := r.FormValue("term")
+
 	list, err := fetchTodos(s.repo, searchTerm)
 	if err != nil {
 		internalErr(w, err, "getting all todos", slog.Default())
 		return
 	}
 
-	headersHXPushURL(w, fmt.Sprintf("/search?term=%s", url.QueryEscape(searchTerm)))
-	headersNoCache(w)
-	render(w, r, pageSearch(list, searchTerm), "pageIndex")
-}
-
-func (s *Server) handleGetHXSearch(w http.ResponseWriter, r *http.Request) {
-	if !requireHTMXRequest(w, r) {
+	if searchTerm != "" {
+		headersHXReplaceURL(w, fmt.Sprintf("/?term=%s", url.QueryEscape(searchTerm)))
+	} else {
+		headersHXReplaceURL(w, "/")
+	}
+	if isHXRequest(r) {
+		render(w, r, comList(list, searchTerm), "comList")
 		return
 	}
-	searchTerm := r.FormValue("term")
 
 	headersNoCache(w)
-	headersHXPushURL(w, fmt.Sprintf("/search/?term=%s", url.QueryEscape(searchTerm)))
-	renderList(w, r, s.repo, searchTerm)
+	render(w, r, pageIndex(list, searchTerm), "pageIndex")
 }
 
-func (s *Server) handlePutHXListAdd(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handlePutIndex(w http.ResponseWriter, r *http.Request) {
 	if !requireHTMXRequest(w, r) {
 		return
 	}
@@ -133,7 +118,7 @@ func (s *Server) handlePutHXListAdd(w http.ResponseWriter, r *http.Request) {
 	renderList(w, r, s.repo, r.FormValue("term"))
 }
 
-func (s *Server) handleDeleteHXList(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleDeleteTodo(w http.ResponseWriter, r *http.Request) {
 	if !requireHTMXRequest(w, r) {
 		return
 	}
@@ -147,7 +132,7 @@ func (s *Server) handleDeleteHXList(w http.ResponseWriter, r *http.Request) {
 	renderList(w, r, s.repo, r.FormValue("term"))
 }
 
-func (s *Server) handlePostHXListToggle(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handlePostToggleTodo(w http.ResponseWriter, r *http.Request) {
 	if !requireHTMXRequest(w, r) {
 		return
 	}
@@ -169,15 +154,19 @@ func internalErr(w http.ResponseWriter, err error, msg string, log *slog.Logger)
 }
 
 func requireHTMXRequest(w http.ResponseWriter, r *http.Request) (ok bool) {
-	if r.Header.Get("HX-Request") != "true" {
-		http.Error(w, "not an HTMX request", http.StatusBadRequest)
-		return false
+	if isHXRequest(r) {
+		return true
 	}
-	return true
+	http.Error(w, "not an HTMX request", http.StatusBadRequest)
+	return false
 }
 
-func headersHXPushURL(w http.ResponseWriter, url string) {
-	w.Header().Set("HX-Push-Url", url)
+func isHXRequest(r *http.Request) bool {
+	return r.Header.Get("HX-Request") == "true"
+}
+
+func headersHXReplaceURL(w http.ResponseWriter, url string) {
+	w.Header().Set("HX-Replace-Url", url)
 }
 
 func headersNoCache(w http.ResponseWriter) {
@@ -211,5 +200,5 @@ func renderList(
 	if err != nil {
 		internalErr(w, err, "fetching todos", slog.Default())
 	}
-	render(w, r, frameList(todos, searchTerm), "frameList")
+	render(w, r, comList(todos, searchTerm), "comList")
 }

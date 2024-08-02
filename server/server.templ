@@ -11,9 +11,7 @@ templ htmlMain(title string) {
 	<html>
 		<head>
 			<title>{ title }</title>
-			<script src="https://unpkg.com/htmx.org@2.0.1"></script>
-			// <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-			<script src="https://cdn.jsdelivr.net/gh/gnat/surreal@main/surreal.js"></script>
+			<script src="/assets/htmx.js"></script>
 			<script src="https://cdn.tailwindcss.com"></script>
 			<style>
 				/* Default global styles */
@@ -47,41 +45,31 @@ templ htmlMain(title string) {
 	</html>
 }
 
-templ pageIndex(todos []repository.Todo) {
+templ pageIndex(todos []repository.Todo, searchTerm string) {
 	@htmlMain("Todos") {
-		@partViewIndex(todos, "")
+		<div class="m-4">
+			<div class="flex">
+				<h1 class="text-xl mr-4">Todos</h1>
+				// Use action="javascript:void(0)" to prevent submit on hitting the enter key.
+				<input
+					class="w-full"
+					name="term"
+					placeholder="Search"
+					hx-trigger="input delay:200ms"
+					hx-target="#list"
+					hx-swap="outerHTML"
+					hx-get="/"
+					value={ searchTerm }
+				/>
+			</div>
+			<div class="mt-4">
+				@comList(todos, searchTerm)
+			</div>
+		</div>
 	}
 }
 
-templ pageSearch(todos []repository.Todo, searchTerm string) {
-	@htmlMain("Todos") {
-		@partViewIndex(todos, searchTerm)
-	}
-}
-
-templ partViewIndex(todos []repository.Todo, searchTerm string) {
-	<div class="m-4">
-		<div class="flex">
-			<h1 class="text-xl mr-4">Todos</h1>
-			// Use action="javascript:void(0)" to prevent submit on hitting the enter key.
-			<input
-				class="w-full"
-				name="term"
-				placeholder="Search"
-				hx-trigger="input delay:200ms"
-				hx-target="#frame-list"
-				hx-swap="outerHTML"
-				hx-get="/hx/search/"
-				value={ searchTerm }
-			/>
-		</div>
-		<div class="mt-4">
-			@frameList(todos, searchTerm)
-		</div>
-	</div>
-}
-
-templ partListItem(todo repository.Todo, hxDelete, hxToggle string) {
+templ partListItem(todo repository.Todo) {
 	<li
 		class="m-2"
 		hx-swap="outerHTML"
@@ -93,7 +81,7 @@ templ partListItem(todo repository.Todo, hxDelete, hxToggle string) {
 			if todo.Done {
 				checked
 			}
-			hx-post={ hxToggle }
+			hx-post={ fmt.Sprintf("/%s/toggle/", todo.ID) }
 			hx-trigger="click"
 		/>
 		if todo.Done {
@@ -105,13 +93,13 @@ templ partListItem(todo repository.Todo, hxDelete, hxToggle string) {
 		}
 		<button
 			class="ml-2"
-			hx-delete={ hxDelete }
+			hx-delete={ fmt.Sprintf("/%s/", todo.ID) }
 		>Delete</button>
 	</li>
 }
 
-templ frameList(todos []repository.Todo, searchTerm string) {
-	<div id="frame-list">
+templ comList(todos []repository.Todo, searchTerm string) {
+	<div id="list">
 		if searchTerm != "" {
 			if len(todos) < 1 {
 				<p>No todos found</p>
@@ -121,11 +109,9 @@ templ frameList(todos []repository.Todo, searchTerm string) {
 		} else if len(todos) < 1 {
 			<p>No todos... let's add one!</p>
 		}
-		<ul hx-target="#frame-list">
+		<ul hx-target="#list">
 			for _, todo := range todos {
-				@partListItem(todo,
-					fmt.Sprintf("/hx/list/%s/", todo.ID),
-					fmt.Sprintf("/hx/list/toggle/%s/", todo.ID))
+				@partListItem(todo)
 			}
 		</ul>
 		if searchTerm == "" {
@@ -139,8 +125,8 @@ templ frameList(todos []repository.Todo, searchTerm string) {
 				<button
 					class="ml-2 pl-2 pr-2"
 					type="submit"
-					hx-put="/hx/list/"
-					hx-target="#frame-list"
+					hx-put="/"
+					hx-target="#list"
 				>Add</button>
 			</form>
 		}
