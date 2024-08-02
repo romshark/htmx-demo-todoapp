@@ -12,7 +12,7 @@ A simple todo application powered by [HTMX](https://htmx.org) and
 
 ## Dev mode
 
-The server can be executed by simply running `go run .` in the root directory.
+The server can be executed by simply running `go run . -host=:8080` in the root directory.
 
 For interactive development mode with hot-reload install
 [Templiér](https://github.com/romshark/templier)

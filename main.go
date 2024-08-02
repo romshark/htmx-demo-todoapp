@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"log/slog"
 	"net/http"
 	"time"
@@ -17,6 +18,9 @@ func panicOnErr(err error) {
 }
 
 func main() {
+	fHost := flag.String("host", ":8080", "server host address")
+	flag.Parse()
+
 	repo, err := repository.NewRepository()
 	panicOnErr(err)
 
@@ -31,9 +35,8 @@ func main() {
 	panicOnErr(err)
 
 	s := server.New(repo)
-	hostAddr := ":8080"
-	slog.Info("listening", slog.String("host", hostAddr))
-	if err := http.ListenAndServe(hostAddr, s); err != nil {
+	slog.Info("listening", slog.String("host", *fHost))
+	if err := http.ListenAndServe(*fHost, s); err != nil {
 		if !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("http server error", slog.Any("err", err))
 		}
