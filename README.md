@@ -1,15 +1,23 @@
+<a href="https://goreportcard.com/report/github.com/romshark/htmx-demo-todoapp">
+    <img src="https://goreportcard.com/badge/github.com/romshark/htmx-demo-todoapp" alt="GoReportCard">
+</a>
+<a href="https://pkg.go.dev/github.com/romshark/htmx-demo-todoapp">
+    <img src="https://godoc.org/github.com/romshark/htmx-demo-todoapp?status.svg" alt="GoDoc">
+</a>
+
 # HTMX todo app
 
-A simple todo application powered by HTMX demonstrating an approach
-to structuring and connecting the HTTP endpoints with "frames",
-each of which may have "variants", for each of which there can be
-"actions" (methods, essentially).
+A simple todo application powered by [HTMX](https://htmx.org) and
+[Templ](https://templ.guide).
 
-```html
-<button hx-post="/hx/list;var=search-result;act=toggle/123">
-```
+## Dev mode
 
-The above `hx-post` triggers method `toggle` on todo with id `123` on variant `search-result` for the frame `#frame-list`.
-`POST /hx/list;var=search-result;act=toggle/123` returns rendered HTML to replace the outerHTML of frame `#frame-list` with.
+The server can be executed by simply running `go run .` in the root directory.
 
-Probably very similar to https://turbo.hotwired.dev/.
+For interactive development mode with hot-reload install
+[Templiér](https://github.com/romshark/templier)
+
+And run `templier --config templier.yml`
+
+Note: you might need to change `app.dir-src-root` and `app.dir-cmd`
+due to a bug in Templiér, see `templier.yml`.
