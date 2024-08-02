@@ -276,10 +276,30 @@ func comList(todos []repository.Todo, searchTerm string) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-		} else if len(todos) < 1 {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<p>No todos... let's add one!</p>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
+		} else {
+			if len(todos) < 1 {
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<p>No todos... let's add one!</p>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<p>You're ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var13 string
+				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(getPercentDone(todos))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `server/server.templ`, Line: 113, Col: 37}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("% done!</p>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
 			}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<ul hx-target=\"#list\">")

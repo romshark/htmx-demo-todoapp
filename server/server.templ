@@ -106,8 +106,12 @@ templ comList(todos []repository.Todo, searchTerm string) {
 			} else {
 				<p>Found { strconv.Itoa(len(todos)) } todos </p>
 			}
-		} else if len(todos) < 1 {
-			<p>No todos... let's add one!</p>
+		} else {
+			if len(todos) < 1 {
+				<p>No todos... let's add one!</p>
+			} else {
+				<p>You're { getPercentDone(todos) }% done!</p>
+			}
 		}
 		<ul hx-target="#list">
 			for _, todo := range todos {

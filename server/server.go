@@ -153,6 +153,17 @@ func internalErr(w http.ResponseWriter, err error, msg string, log *slog.Logger)
 	http.Error(w, http.StatusText(code), code)
 }
 
+func getPercentDone(todos []repository.Todo) string {
+	countDone := 0
+	for i := range todos {
+		if todos[i].Done {
+			countDone++
+		}
+	}
+	f := float64(countDone) / float64(len(todos))
+	return fmt.Sprintf("%d", int(f*100))
+}
+
 func requireHTMXRequest(w http.ResponseWriter, r *http.Request) (ok bool) {
 	if isHXRequest(r) {
 		return true
