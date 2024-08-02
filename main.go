@@ -2,29 +2,34 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/a-h/templ"
 )
 
-func main() {
-	repo, err := NewRepository()
+func panicOnErr(err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func main() {
+	repo, err := NewRepository()
+	panicOnErr(err)
 
 	// Add some default demo todos
-	if _, err = repo.Add("Buy milk", false, time.Now()); err != nil {
-		panic(err)
-	}
-	if _, err = repo.Add("Wash the car", false, time.Now()); err != nil {
-		panic(err)
-	}
-	if _, err = repo.Add("Feed the cat", true, time.Now()); err != nil {
-		panic(err)
-	}
+	_, err = repo.Add("Buy milk", false, time.Now())
+	panicOnErr(err)
+	_, err = repo.Add("Wash the car", false, time.Now())
+	panicOnErr(err)
+	_, err = repo.Add("Feed the cat", true, time.Now())
+	panicOnErr(err)
+	_, err = repo.Add("Buy more cat food", false, time.Now())
+	panicOnErr(err)
 
 	s := NewServer(repo)
 	hostAddr := ":8080"
@@ -59,32 +64,24 @@ func NewServer(repo *Repository) *Server {
 	m := http.NewServeMux()
 
 	// The following endpoints render navigable pages.
-	m.HandleFunc("GET /{$}", s.page_index)
+	m.HandleFunc("GET /{$}", s.handleGetPageIndex)
+	m.HandleFunc("GET /search/{$}", s.handleGetPageSearch)
 
 	// The following endpoints render HTMX components for partial reloads of frames.
 	// Non-HTMX requests are rejected with 400 Bad Request.
-	// Every endpoint represents an action with parameters on a particular frame:
-	//
-	//   METHOD /hx/<frame_name>[;var=<variant_name>][;act=<action_name>]/...
-	m.HandleFunc("GET /hx/list;act=search/{$}",
-		s.get_hx_list__search)
+	m.HandleFunc("GET /hx/search/{$}",
+		s.handleGetHXSearch)
 
 	// The matrix parameter "var=all" specifies that this endpoint is supposed to be
 	// used only from within the variant "all" of the frame "list" when action "toggle"
 	// is triggered.
-	m.HandleFunc("POST /hx/list;var=all;act=toggle/{id}/",
-		s.post_hx_list_all_toggle)
-	m.HandleFunc("POST /hx/list;var=all;act=add/{$}",
-		s.post_hx_list_all_add)
-	m.HandleFunc("DELETE /hx/list;var=all/{id}/{$}",
-		s.delete_hx_list_all)
+	m.HandleFunc("POST /hx/list/toggle/{id}/",
+		s.handlePostHXListToggle)
+	m.HandleFunc("PUT /hx/list/{$}",
+		s.handlePutHXListAdd)
+	m.HandleFunc("DELETE /hx/list/{id}/{$}",
+		s.handleDeleteHXList)
 
-	// The matrix parameter "var=search-result" specifies that this endpoint is supposed
-	// to be used only from within the variant "search-result" of the frame "list".
-	m.HandleFunc("POST /hx/list;var=search-result;act=toggle/{id}/{$}",
-		s.post_hx_list_searchResult_toggle)
-	m.HandleFunc("DELETE /hx/list;var=search-result/{id}/{$}",
-		s.delete_hx_list_searchResult)
 	s.mux = m
 
 	return s
@@ -93,34 +90,47 @@ func NewServer(repo *Repository) *Server {
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	slog.Info("access",
 		slog.String("method", r.Method),
-		slog.String("path", r.URL.Path))
+		slog.String("path", r.URL.Path),
+		slog.String("query", r.URL.Query().Encode()))
 	s.mux.ServeHTTP(w, r)
 }
 
-func (s *Server) page_index(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleGetPageIndex(w http.ResponseWriter, r *http.Request) {
 	list, err := s.repo.All()
 	if err != nil {
 		internalErr(w, err, "getting all todos", slog.Default())
 		return
 	}
-	render(w, r, page_index(list), "pageIndex")
+
+	headersNoCache(w)
+	render(w, r, pageIndex(list), "pageIndex")
 }
 
-func (s *Server) get_hx_list__search(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleGetPageSearch(w http.ResponseWriter, r *http.Request) {
+	searchTerm := r.FormValue("term")
+	list, err := fetchTodos(s.repo, searchTerm)
+	if err != nil {
+		internalErr(w, err, "getting all todos", slog.Default())
+		return
+	}
+
+	headersHXPushURL(w, fmt.Sprintf("/search?term=%s", url.QueryEscape(searchTerm)))
+	headersNoCache(w)
+	render(w, r, pageSearch(list, searchTerm), "pageIndex")
+}
+
+func (s *Server) handleGetHXSearch(w http.ResponseWriter, r *http.Request) {
 	if !requireHTMXRequest(w, r) {
 		return
 	}
+	searchTerm := r.FormValue("term")
 
-	term := r.FormValue("term")
-	if term == "" {
-		render_list_all(w, r, s.repo)
-		return
-	}
-
-	render_list_searchResult(w, r, s.repo)
+	headersNoCache(w)
+	headersHXPushURL(w, fmt.Sprintf("/search/?term=%s", url.QueryEscape(searchTerm)))
+	renderList(w, r, s.repo, searchTerm)
 }
 
-func (s *Server) post_hx_list_all_add(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handlePutHXListAdd(w http.ResponseWriter, r *http.Request) {
 	if !requireHTMXRequest(w, r) {
 		return
 	}
@@ -135,26 +145,24 @@ func (s *Server) post_hx_list_all_add(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render_list_all(w, r, s.repo)
+	renderList(w, r, s.repo, r.FormValue("term"))
 }
 
-func (s *Server) delete_hx_list_all(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleDeleteHXList(w http.ResponseWriter, r *http.Request) {
 	if !requireHTMXRequest(w, r) {
 		return
 	}
 
 	id := r.PathValue("id")
 	if err := s.repo.Remove(id); err != nil {
-		internalErr(w, err,
-			"getting all todos",
-			slog.With(slog.String("id", id)))
+		internalErr(w, err, "removing todo", slog.With(slog.String("id", id)))
 		return
 	}
 
-	render_list_all(w, r, s.repo)
+	renderList(w, r, s.repo, r.FormValue("term"))
 }
 
-func (s *Server) post_hx_list_all_toggle(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handlePostHXListToggle(w http.ResponseWriter, r *http.Request) {
 	if !requireHTMXRequest(w, r) {
 		return
 	}
@@ -162,42 +170,11 @@ func (s *Server) post_hx_list_all_toggle(w http.ResponseWriter, r *http.Request)
 	id := r.PathValue("id")
 	_, err := s.repo.Toggle(id)
 	if err != nil {
-		internalErr(w, err, "toggling", slog.With(slog.String("id", id)))
+		internalErr(w, err, "toggling todo", slog.With(slog.String("id", id)))
 	}
 	slog.Info("toggled", slog.String("id", id))
 
-	render_list_all(w, r, s.repo)
-}
-
-func (s *Server) post_hx_list_searchResult_toggle(w http.ResponseWriter, r *http.Request) {
-	if !requireHTMXRequest(w, r) {
-		return
-	}
-
-	id := r.PathValue("id")
-	_, err := s.repo.Toggle(id)
-	if err != nil {
-		internalErr(w, err, "toggling", slog.With(slog.String("id", id)))
-	}
-	slog.Info("toggled", slog.String("id", id))
-
-	render_list_searchResult(w, r, s.repo)
-}
-
-func (s *Server) delete_hx_list_searchResult(w http.ResponseWriter, r *http.Request) {
-	if !requireHTMXRequest(w, r) {
-		return
-	}
-
-	id := r.PathValue("id")
-	if err := s.repo.Remove(id); err != nil {
-		internalErr(w, err,
-			"getting all todos",
-			slog.With(slog.String("id", id)))
-		return
-	}
-
-	render_list_searchResult(w, r, s.repo)
+	renderList(w, r, s.repo, r.FormValue("term"))
 }
 
 func internalErr(w http.ResponseWriter, err error, msg string, log *slog.Logger) {
@@ -214,18 +191,37 @@ func requireHTMXRequest(w http.ResponseWriter, r *http.Request) (ok bool) {
 	return true
 }
 
-func render_list_all(w http.ResponseWriter, r *http.Request, repo *Repository) {
-	todos, err := repo.All()
-	if err != nil {
-		internalErr(w, err, "getting all todos", slog.Default())
-	}
-	render(w, r, frame_list_all(todos), "frame_list_all")
+func headersHXPushURL(w http.ResponseWriter, url string) {
+	w.Header().Set("HX-Push-Url", url)
 }
 
-func render_list_searchResult(w http.ResponseWriter, r *http.Request, repo *Repository) {
-	todos, err := repo.Find(r.FormValue("term"))
-	if err != nil {
-		internalErr(w, err, "getting all todos", slog.Default())
+func headersNoCache(w http.ResponseWriter) {
+	w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+	w.Header().Set("Pragma", "no-cache")
+	w.Header().Set("Expires", "0")
+}
+
+func fetchTodos(repo *Repository, searchTerm string) ([]Todo, error) {
+	if searchTerm == "" {
+		todos, err := repo.All()
+		if err != nil {
+			return nil, fmt.Errorf("getting all todos: %w", err)
+		}
+		return todos, nil
 	}
-	render(w, r, frame_list_searchResult(todos), "frame_list_searchResult")
+	todos, err := repo.Find(searchTerm)
+	if err != nil {
+		return nil, fmt.Errorf("searching todos: %w", err)
+	}
+	return todos, nil
+}
+
+func renderList(
+	w http.ResponseWriter, r *http.Request, repo *Repository, searchTerm string,
+) {
+	todos, err := fetchTodos(repo, searchTerm)
+	if err != nil {
+		internalErr(w, err, "fetching todos", slog.Default())
+	}
+	render(w, r, frameList(todos, searchTerm), "frameList")
 }

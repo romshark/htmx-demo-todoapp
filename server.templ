@@ -1,14 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
-// each templ template name represents a template type:
-//  - `html_<doc_name>` is an HTML document template.
-//  - `page_<page_name>` is a navigable page template.
-//  - `part_<part_name>` is reusable template.
-//  - `frame_<frame_name>_<variant_name>` is an HTMX component template for
-//    the frame <frame_name> with content variant <variant_name>.
-templ html_main(title string) {
+templ htmlMain(title string) {
 	<!DOCTYPE html>
 	<html>
 		<head>
@@ -49,17 +46,23 @@ templ html_main(title string) {
 	</html>
 }
 
-templ page_index(todos []Todo) {
-	@html_main("Todos") {
-		@partViewIndex(todos)
+templ pageIndex(todos []Todo) {
+	@htmlMain("Todos") {
+		@partViewIndex(todos, "")
 	}
 }
 
-templ partViewIndex(todos []Todo) {
+templ pageSearch(todos []Todo, searchTerm string) {
+	@htmlMain("Todos") {
+		@partViewIndex(todos, searchTerm)
+	}
+}
+
+templ partViewIndex(todos []Todo, searchTerm string) {
 	<div class="m-4">
-		// Use action="javascript:void(0)" to prevent submit on hitting the enter key.
 		<div class="flex">
 			<h1 class="text-xl mr-4">Todos</h1>
+			// Use action="javascript:void(0)" to prevent submit on hitting the enter key.
 			<input
 				class="w-full"
 				name="term"
@@ -67,19 +70,19 @@ templ partViewIndex(todos []Todo) {
 				hx-trigger="input delay:200ms"
 				hx-target="#frame-list"
 				hx-swap="outerHTML"
-				hx-get="/hx/list;act=search/"
+				hx-get="/hx/search/"
+				value={ searchTerm }
 			/>
 		</div>
 		<div class="mt-4">
-			@frame_list_all(todos)
+			@frameList(todos, searchTerm)
 		</div>
 	</div>
 }
 
-templ part_listItem(todo Todo, hxDelete, hxToggle string) {
+templ partListItem(todo Todo, hxDelete, hxToggle string) {
 	<li
 		class="m-2"
-		hx-target="#frame-list"
 		hx-swap="outerHTML"
 		hx-include="[name='term']"
 	>
@@ -106,48 +109,39 @@ templ part_listItem(todo Todo, hxDelete, hxToggle string) {
 	</li>
 }
 
-templ frame_list_all(todos []Todo) {
+templ frameList(todos []Todo, searchTerm string) {
 	<div id="frame-list">
-		if len(todos) < 1 {
+		if searchTerm != "" {
+			if len(todos) < 1 {
+				<p>No todos found</p>
+			} else {
+				<p>Found { strconv.Itoa(len(todos)) } todos </p>
+			}
+		} else if len(todos) < 1 {
 			<p>No todos... let's add one!</p>
 		}
-		<ul>
+		<ul hx-target="#frame-list">
 			for _, todo := range todos {
-				@part_listItem(todo,
-					fmt.Sprintf("/hx/list;var=all/%s/", todo.ID),
-					fmt.Sprintf("/hx/list;var=all;act=toggle/%s/", todo.ID))
+				@partListItem(todo,
+					fmt.Sprintf("/hx/list/%s/", todo.ID),
+					fmt.Sprintf("/hx/list/toggle/%s/", todo.ID))
 			}
 		</ul>
-		<form class="mt-4 w-full flex">
-			<input
-				class="w-full"
-				type="text"
-				name="title"
-				placeholder="New Todo"
-			/>
-			<button
-				class="ml-2 pl-2 pr-2"
-				type="submit"
-				hx-post="/hx/list;var=all;act=add/"
-				hx-target="#frame-list"
-			>Add</button>
-		</form>
-	</div>
-}
-
-templ frame_list_searchResult(todos []Todo) {
-	<div id="frame-list">
-		if len(todos) < 1 {
-			<p>No todos found</p>
-		} else {
-			<p>Found { fmt.Sprintf("%d", len(todos)) } todos</p>
+		if searchTerm == "" {
+			<form class="mt-4 w-full flex">
+				<input
+					class="w-full"
+					type="text"
+					name="title"
+					placeholder="New Todo"
+				/>
+				<button
+					class="ml-2 pl-2 pr-2"
+					type="submit"
+					hx-put="/hx/list/"
+					hx-target="#frame-list"
+				>Add</button>
+			</form>
 		}
-		<ul>
-			for _, todo := range todos {
-				@part_listItem(todo,
-					fmt.Sprintf("/hx/list;var=search-result/%s/", todo.ID),
-					fmt.Sprintf("/hx/list;var=search-result;act=toggle/%s/", todo.ID))
-			}
-		</ul>
 	</div>
 }
