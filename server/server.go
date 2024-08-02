@@ -1,6 +1,7 @@
 package server
 
 import (
+	_ "embed"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -11,6 +12,12 @@ import (
 
 	"github.com/romshark/htmx-demo-todoapp/repository"
 )
+
+//go:embed icon.ico
+var fileFaviconIco []byte
+
+//go:embed assets/htmx.js
+var fileHTMXJS []byte
 
 func render(w http.ResponseWriter, r *http.Request, c templ.Component, name string) {
 	err := c.Render(r.Context(), w)
@@ -33,6 +40,13 @@ var _ http.Handler = new(Server)
 func New(repo *repository.Repository) *Server {
 	s := &Server{repo: repo}
 	m := http.NewServeMux()
+
+	m.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write(fileFaviconIco)
+	})
+	m.HandleFunc("GET /assets/htmx.js", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write(fileHTMXJS)
+	})
 
 	// The following endpoints render navigable pages.
 	m.HandleFunc("GET /{$}", s.handleGetPageIndex)
