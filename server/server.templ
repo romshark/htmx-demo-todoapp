@@ -1,7 +1,8 @@
-package main
+package server
 
 import (
 	"fmt"
+	"github.com/romshark/htmx-demo-todoapp/repository"
 	"strconv"
 )
 
@@ -46,19 +47,19 @@ templ htmlMain(title string) {
 	</html>
 }
 
-templ pageIndex(todos []Todo) {
+templ pageIndex(todos []repository.Todo) {
 	@htmlMain("Todos") {
 		@partViewIndex(todos, "")
 	}
 }
 
-templ pageSearch(todos []Todo, searchTerm string) {
+templ pageSearch(todos []repository.Todo, searchTerm string) {
 	@htmlMain("Todos") {
 		@partViewIndex(todos, searchTerm)
 	}
 }
 
-templ partViewIndex(todos []Todo, searchTerm string) {
+templ partViewIndex(todos []repository.Todo, searchTerm string) {
 	<div class="m-4">
 		<div class="flex">
 			<h1 class="text-xl mr-4">Todos</h1>
@@ -80,7 +81,7 @@ templ partViewIndex(todos []Todo, searchTerm string) {
 	</div>
 }
 
-templ partListItem(todo Todo, hxDelete, hxToggle string) {
+templ partListItem(todo repository.Todo, hxDelete, hxToggle string) {
 	<li
 		class="m-2"
 		hx-swap="outerHTML"
@@ -109,7 +110,7 @@ templ partListItem(todo Todo, hxDelete, hxToggle string) {
 	</li>
 }
 
-templ frameList(todos []Todo, searchTerm string) {
+templ frameList(todos []repository.Todo, searchTerm string) {
 	<div id="frame-list">
 		if searchTerm != "" {
 			if len(todos) < 1 {
