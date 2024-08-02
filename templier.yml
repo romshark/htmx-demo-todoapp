@@ -1,0 +1,22 @@
+proxy-timeout: 10s
+lint: true
+templier-host: "localhost:7331"
+print-js-debug-logs: true
+verbose: true
+debounce:
+  templ: 50ms
+  go: 50ms
+tls:
+app:
+  # Change this to absolute path.
+  # There seems to be a bug in Templier 0.4.1
+  dir-src-root: "./"
+  exclude:
+    - .git*
+  # And change this to absolute path too for the same reason.
+  dir-cmd: "./"
+  dir-work:
+  host: "http://127.0.0.1:8080"
+  go-flags:
+  flags:
+custom-watchers:

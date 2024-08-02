@@ -1,0 +1,153 @@
+package main
+
+import "fmt"
+
+// each templ template name represents a template type:
+//  - `html_<doc_name>` is an HTML document template.
+//  - `page_<page_name>` is a navigable page template.
+//  - `part_<part_name>` is reusable template.
+//  - `frame_<frame_name>_<variant_name>` is an HTMX component template for
+//    the frame <frame_name> with content variant <variant_name>.
+templ html_main(title string) {
+	<!DOCTYPE html>
+	<html>
+		<head>
+			<title>{ title }</title>
+			<script src="https://unpkg.com/htmx.org@2.0.1"></script>
+			// <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+			<script src="https://cdn.jsdelivr.net/gh/gnat/surreal@main/surreal.js"></script>
+			<script src="https://cdn.tailwindcss.com"></script>
+			<style>
+				/* Default global styles */
+				html button, html input {
+					border: 1px solid grey;
+					border-radius: .2rem;
+					padding: .2rem;
+					padding-left: .3rem;
+					padding-right: .3rem;
+				}
+				li {
+					padding-left: .5rem;
+					display: flex;
+					align-items: center;
+				}
+				li::before {
+					content: "-";
+					margin-right: .5rem;
+				}
+				input[type="checkbox"] {
+					width: 1.25rem;
+					height: 1.25rem;
+				}
+			</style>
+		</head>
+		<body>
+			<div id="viewport">
+				{ children... }
+			</div>
+		</body>
+	</html>
+}
+
+templ page_index(todos []Todo) {
+	@html_main("Todos") {
+		@partViewIndex(todos)
+	}
+}
+
+templ partViewIndex(todos []Todo) {
+	<div class="m-4">
+		// Use action="javascript:void(0)" to prevent submit on hitting the enter key.
+		<div class="flex">
+			<h1 class="text-xl mr-4">Todos</h1>
+			<input
+				class="w-full"
+				name="term"
+				placeholder="Search"
+				hx-trigger="input delay:200ms"
+				hx-target="#frame-list"
+				hx-swap="outerHTML"
+				hx-get="/hx/list;act=search/"
+			/>
+		</div>
+		<div class="mt-4">
+			@frame_list_all(todos)
+		</div>
+	</div>
+}
+
+templ part_listItem(todo Todo, hxDelete, hxToggle string) {
+	<li
+		class="m-2"
+		hx-target="#frame-list"
+		hx-swap="outerHTML"
+		hx-include="[name='term']"
+	>
+		<input
+			class="mr-2"
+			type="checkbox"
+			if todo.Done {
+				checked
+			}
+			hx-post={ hxToggle }
+			hx-trigger="click"
+		/>
+		if todo.Done {
+			<strike>
+				<span>{ todo.Title }</span>
+			</strike>
+		} else {
+			<span>{ todo.Title }</span>
+		}
+		<button
+			class="ml-2"
+			hx-delete={ hxDelete }
+		>Delete</button>
+	</li>
+}
+
+templ frame_list_all(todos []Todo) {
+	<div id="frame-list">
+		if len(todos) < 1 {
+			<p>No todos... let's add one!</p>
+		}
+		<ul>
+			for _, todo := range todos {
+				@part_listItem(todo,
+					fmt.Sprintf("/hx/list;var=all/%s/", todo.ID),
+					fmt.Sprintf("/hx/list;var=all;act=toggle/%s/", todo.ID))
+			}
+		</ul>
+		<form class="mt-4 w-full flex">
+			<input
+				class="w-full"
+				type="text"
+				name="title"
+				placeholder="New Todo"
+			/>
+			<button
+				class="ml-2 pl-2 pr-2"
+				type="submit"
+				hx-post="/hx/list;var=all;act=add/"
+				hx-target="#frame-list"
+			>Add</button>
+		</form>
+	</div>
+}
+
+templ frame_list_searchResult(todos []Todo) {
+	<div id="frame-list">
+		if len(todos) < 1 {
+			<p>No todos found</p>
+		} else {
+			<p>Found { fmt.Sprintf("%d", len(todos)) } todos</p>
+		}
+		<ul>
+			for _, todo := range todos {
+				@part_listItem(todo,
+					fmt.Sprintf("/hx/list;var=search-result/%s/", todo.ID),
+					fmt.Sprintf("/hx/list;var=search-result;act=toggle/%s/", todo.ID))
+			}
+		</ul>
+	</div>
+}
