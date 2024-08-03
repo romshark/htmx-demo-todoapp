@@ -1,0 +1,19 @@
+{
+  "name": "htmx-demo-todoapp",
+  "version": "1.0.0",
+  "description": "An HTMX + Go + Templ + TailwindCSS demo",
+  "main": "index.js",
+  "scripts": {
+    "build:css": "postcss ./server/input.css -o ./server/public/dist.css",
+    "watch:css": "tailwindcss -i ./server/input.css -o ./server/public/dist.css --watch"
+  },
+  "keywords": [],
+  "author": "Roman Scharkov <roman.scharkov@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.40",
+    "postcss-cli": "^11.0.0",
+    "tailwindcss": "^3.4.7"
+  }
+}

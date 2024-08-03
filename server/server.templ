@@ -14,37 +14,7 @@ templ htmlMain(title string) {
 			<link rel="icon" href="/public/favicon.ico"/>
 			<script src="/public/htmx.js"></script>
 			<script src="/public/surreal.js"></script>
-			<script src="https://cdn.tailwindcss.com"></script>
-			<style>
-				/* Default global styles */
-				html button, html input {
-					border: 1px solid grey;
-					border-radius: .2rem;
-					padding: .2rem;
-					padding-left: .3rem;
-					padding-right: .3rem;
-				}
-				li {
-					padding-left: .5rem;
-					display: flex;
-					align-items: center;
-				}
-				li::before {
-					content: "-";
-					margin-right: .5rem;
-				}
-				.button-checkbox {
-					width: 1.5rem;
-					height: 1.5rem;
-					display: inline-flex;
-					border: 1px solid #ccc;
-					border-radius: 0.25rem;
-					cursor: pointer;
-					position: relative;
-					font-size: .5rem;
-					text-align: center;
-				}
-			</style>
+			<link rel="stylesheet" href="/public/dist.css"/>
 		</head>
 		<body>
 			<div id="viewport">

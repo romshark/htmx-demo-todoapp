@@ -12,7 +12,8 @@ app:
   # There seems to be a bug in Templier 0.4.1
   dir-src-root: "./"
   exclude:
-    - .git*
+    - ".git*"
+    - "*~" # Any temporary backup files IDEs might use.
   # And change this to absolute path too for the same reason.
   dir-cmd: "./"
   dir-work:
@@ -20,3 +21,9 @@ app:
   go-flags:
   flags:
 custom-watchers:
+  - name: "Bundle CSS"
+    cmd: npm run build:css
+    include: ["*.templ", "server/input.css"]
+    fail-on-error: true
+    debounce:
+    requires: reload
