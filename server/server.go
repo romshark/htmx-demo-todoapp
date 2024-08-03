@@ -1,7 +1,7 @@
 package server
 
 import (
-	_ "embed"
+	"embed"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -13,14 +13,10 @@ import (
 	"github.com/romshark/htmx-demo-todoapp/repository"
 )
 
-//go:embed icon.ico
-var fileFaviconIco []byte
-
-//go:embed assets/htmx.js
-var fileHTMXJS []byte
-
-//go:embed assets/surreal.js
-var fileSurrealJS []byte
+// embedDirPublic Embeds the assets directory
+//
+//go:embed public/*
+var embedDirPublic embed.FS
 
 func render(w http.ResponseWriter, r *http.Request, c templ.Component, name string) {
 	err := c.Render(r.Context(), w)
@@ -44,15 +40,7 @@ func New(repo *repository.Repository) *Server {
 	s := &Server{repo: repo}
 	m := http.NewServeMux()
 
-	m.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write(fileFaviconIco)
-	})
-	m.HandleFunc("GET /assets/htmx.js", func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write(fileHTMXJS)
-	})
-	m.HandleFunc("GET /assets/surreal.js", func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write(fileSurrealJS)
-	})
+	m.Handle("GET /public/", http.FileServer(http.FS(embedDirPublic)))
 
 	// The following endpoints render navigable pages.
 	m.HandleFunc("GET /{$}", s.handleIndex)
