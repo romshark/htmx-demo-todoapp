@@ -12,6 +12,7 @@ templ htmlMain(title string) {
 		<head>
 			<title>{ title }</title>
 			<script src="/assets/htmx.js"></script>
+			<script src="/assets/surreal.js"></script>
 			<script src="https://cdn.tailwindcss.com"></script>
 			<style>
 				/* Default global styles */
@@ -31,9 +32,16 @@ templ htmlMain(title string) {
 					content: "-";
 					margin-right: .5rem;
 				}
-				input[type="checkbox"] {
-					width: 1.25rem;
-					height: 1.25rem;
+				.button-checkbox {
+					width: 1.5rem;
+					height: 1.5rem;
+					display: inline-flex;
+					border: 1px solid #ccc;
+					border-radius: 0.25rem;
+					cursor: pointer;
+					position: relative;
+					font-size: .5rem;
+					text-align: center;
 				}
 			</style>
 		</head>
@@ -50,17 +58,25 @@ templ pageIndex(todos []repository.Todo, searchTerm string) {
 		<div class="m-4">
 			<div class="flex">
 				<h1 class="text-xl mr-4">Todos</h1>
-				// Use action="javascript:void(0)" to prevent submit on hitting the enter key.
-				<input
-					class="w-full"
-					name="term"
-					placeholder="Search"
+				<form
+					action="/"
 					hx-trigger="input delay:200ms"
 					hx-target="#list"
 					hx-swap="outerHTML"
 					hx-get="/"
-					value={ searchTerm }
-				/>
+				>
+					<input
+						class="w-full"
+						name="term"
+						placeholder="Search"
+						value={ searchTerm }
+					/>
+					<script>
+						// Prevent submit on hitting the enter key
+						// when JavaScript is enabled.
+						me().action="javascript:void(0)"
+					</script>
+				</form>
 			</div>
 			<div class="mt-4">
 				@comList(todos, searchTerm)
@@ -69,21 +85,29 @@ templ pageIndex(todos []repository.Todo, searchTerm string) {
 	}
 }
 
-templ partListItem(todo repository.Todo) {
+templ partListItem(todo repository.Todo, searchTerm string) {
 	<li
 		class="m-2"
 		hx-swap="outerHTML"
 		hx-include="[name='term']"
 	>
-		<input
-			class="mr-2"
-			type="checkbox"
-			if todo.Done {
-				checked
-			}
+		<form
+			method="POST"
+			action={ templ.SafeURL(fmt.Sprintf("/%s/toggle/", todo.ID)) }
 			hx-post={ fmt.Sprintf("/%s/toggle/", todo.ID) }
-			hx-trigger="click"
-		/>
+		>
+			<input type="hidden" name="term" value={ searchTerm }/>
+			<input
+				type="submit"
+				class="button-checkbox mr-2"
+				if todo.Done {
+					value="✔"
+					class="checked"
+				} else {
+					value=""
+				}
+			/>
+		</form>
 		if todo.Done {
 			<strike>
 				<span>{ todo.Title }</span>
@@ -91,10 +115,14 @@ templ partListItem(todo repository.Todo) {
 		} else {
 			<span>{ todo.Title }</span>
 		}
-		<button
-			class="ml-2"
-			hx-delete={ fmt.Sprintf("/%s/", todo.ID) }
-		>Delete</button>
+		<form
+			method="POST"
+			action={ templ.SafeURL(fmt.Sprintf("/%s/delete/", todo.ID)) }
+			hx-post={ fmt.Sprintf("/%s/delete/", todo.ID) }
+		>
+			<input type="hidden" name="term" value={ searchTerm }/>
+			<button class="ml-2" type="submit">Delete</button>
+		</form>
 	</li>
 }
 
@@ -115,11 +143,17 @@ templ comList(todos []repository.Todo, searchTerm string) {
 		}
 		<ul hx-target="#list">
 			for _, todo := range todos {
-				@partListItem(todo)
+				@partListItem(todo, searchTerm)
 			}
 		</ul>
 		if searchTerm == "" {
-			<form class="mt-4 w-full flex">
+			<form
+				method="POST"
+				action="/"
+				hx-post="/"
+				hx-target="#list"
+				class="mt-4 w-full flex"
+			>
 				<input
 					class="w-full"
 					type="text"
@@ -129,8 +163,6 @@ templ comList(todos []repository.Todo, searchTerm string) {
 				<button
 					class="ml-2 pl-2 pr-2"
 					type="submit"
-					hx-put="/"
-					hx-target="#list"
 				>Add</button>
 			</form>
 		}

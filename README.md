@@ -10,6 +10,12 @@
 A simple todo application powered by [HTMX](https://htmx.org) and
 [Templ](https://templ.guide).
 
+- **Graceful Degradation**: This app continues to provide limited core functionality
+  even when JavaScript is disabled by utilizing
+  [303 redirects](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/303),
+  [HTML forms](https://www.w3schools.com/html/html_forms.asp)
+  and the [`HX-Request`](https://htmx.org/reference/#headers) header.
+
 ## Dev mode
 
 The server can be executed by simply running `go run . -host=:8080` in the root directory.

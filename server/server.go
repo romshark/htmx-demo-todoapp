@@ -19,6 +19,9 @@ var fileFaviconIco []byte
 //go:embed assets/htmx.js
 var fileHTMXJS []byte
 
+//go:embed assets/surreal.js
+var fileSurrealJS []byte
+
 func render(w http.ResponseWriter, r *http.Request, c templ.Component, name string) {
 	err := c.Render(r.Context(), w)
 	if err != nil {
@@ -47,6 +50,9 @@ func New(repo *repository.Repository) *Server {
 	m.HandleFunc("GET /assets/htmx.js", func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write(fileHTMXJS)
 	})
+	m.HandleFunc("GET /assets/surreal.js", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write(fileSurrealJS)
+	})
 
 	// The following endpoints render navigable pages.
 	m.HandleFunc("GET /{$}", s.handleIndex)
@@ -59,10 +65,13 @@ func New(repo *repository.Repository) *Server {
 	// is triggered.
 	m.HandleFunc("POST /{id}/toggle/{$}",
 		s.handlePostToggleTodo)
-	m.HandleFunc("PUT /{$}",
-		s.handlePutIndex)
-	m.HandleFunc("DELETE /{id}/{$}",
-		s.handleDeleteTodo)
+	m.HandleFunc("POST /{$}",
+		s.handlePostIndex)
+
+	// This endpoint doesn't use the DELETE method because
+	// HTML form can't issue a DELETE request.
+	m.HandleFunc("POST /{id}/delete/{$}",
+		s.handlePostTodoDelete)
 
 	s.mux = m
 
@@ -100,7 +109,7 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	render(w, r, pageIndex(list, searchTerm), "pageIndex")
 }
 
-func (s *Server) handlePutIndex(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handlePostIndex(w http.ResponseWriter, r *http.Request) {
 	if !requireHTMXRequest(w, r) {
 		return
 	}
@@ -115,28 +124,26 @@ func (s *Server) handlePutIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	renderList(w, r, s.repo, r.FormValue("term"))
+	redirectIndex(w, r)
 }
 
-func (s *Server) handleDeleteTodo(w http.ResponseWriter, r *http.Request) {
-	if !requireHTMXRequest(w, r) {
-		return
-	}
-
+func (s *Server) handlePostTodoDelete(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if err := s.repo.Remove(id); err != nil {
 		internalErr(w, err, "removing todo", slog.With(slog.String("id", id)))
 		return
 	}
 
-	renderList(w, r, s.repo, r.FormValue("term"))
-}
-
-func (s *Server) handlePostToggleTodo(w http.ResponseWriter, r *http.Request) {
-	if !requireHTMXRequest(w, r) {
+	if isHXRequest(r) {
+		renderList(w, r, s.repo, r.FormValue("term"))
 		return
 	}
 
+	redirectIndex(w, r)
+}
+
+func (s *Server) handlePostToggleTodo(w http.ResponseWriter, r *http.Request) {
+	searchTerm := r.FormValue("term")
 	id := r.PathValue("id")
 	_, err := s.repo.Toggle(id)
 	if err != nil {
@@ -144,7 +151,12 @@ func (s *Server) handlePostToggleTodo(w http.ResponseWriter, r *http.Request) {
 	}
 	slog.Info("toggled", slog.String("id", id))
 
-	renderList(w, r, s.repo, r.FormValue("term"))
+	if isHXRequest(r) {
+		renderList(w, r, s.repo, searchTerm)
+		return
+	}
+
+	redirectIndex(w, r)
 }
 
 func internalErr(w http.ResponseWriter, err error, msg string, log *slog.Logger) {
@@ -164,12 +176,10 @@ func getPercentDone(todos []repository.Todo) string {
 	return fmt.Sprintf("%d", int(f*100))
 }
 
-func requireHTMXRequest(w http.ResponseWriter, r *http.Request) (ok bool) {
-	if isHXRequest(r) {
-		return true
-	}
-	http.Error(w, "not an HTMX request", http.StatusBadRequest)
-	return false
+func requireHTMXRequest(_ http.ResponseWriter, _ *http.Request) (ok bool) {
+	return true
+	// http.Error(w, "not an HTMX request", http.StatusBadRequest)
+	// return false
 }
 
 func isHXRequest(r *http.Request) bool {
@@ -212,4 +222,13 @@ func renderList(
 		internalErr(w, err, "fetching todos", slog.Default())
 	}
 	render(w, r, comList(todos, searchTerm), "comList")
+}
+
+func redirectIndex(w http.ResponseWriter, r *http.Request) {
+	u := "/"
+	searchTerm := r.FormValue("term")
+	if searchTerm != "" {
+		u = fmt.Sprintf("/?term=%s", url.QueryEscape(searchTerm))
+	}
+	http.Redirect(w, r, u, http.StatusSeeOther)
 }
