@@ -5,7 +5,10 @@
     <img src="https://godoc.org/github.com/romshark/htmx-demo-todoapp?status.svg" alt="GoDoc">
 </a>
 
-# HTMX todo app
+![todoapp_1](https://github.com/user-attachments/assets/789059b1-84d9-4694-b87c-5f7a32d63e64)
+
+
+# HTMX Tech-Demo - Todo App
 
 A simple todo application powered by [Go](https://go.dev/), [HTMX](https://htmx.org),
 [Templ](https://templ.guide), [TailwindCSS](https://tailwindcss.com/) and
