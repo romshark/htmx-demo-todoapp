@@ -11,6 +11,8 @@ jobs:
           check-latest: true
       - name: Checkout repository
         uses: actions/checkout@v3
+      - name: Install npm
+        run: npm i
 
       # Test
       - name: Test
@@ -41,6 +43,34 @@ jobs:
         run: |
           echo "Detected uncommitted changes after running templ generate." \
           "Please regenerate .templ templates and commit changes." && exit 1
+
+      # Make sure CSS was built before commit
+      - name: Build CSS
+        run: npm run build:css
+      - name: Check file changes after building CSS
+        run: |
+          git diff --exit-code
+        id: diff_files_after_css_build
+        continue-on-error: true
+      - name: Fail if changes are detected
+        if: steps.diff_files_after_css_build.outcome == 'failure'
+        run: |
+          echo "Detected uncommitted changes after running npm run build:css" \
+          "Please regenerate all CSS and commit changes." && exit 1
+
+      # Make sure JavaScript was built before commit
+      - name: Build JavaScript
+        run: npm run build:js
+      - name: Check file changes after building JavaScript
+        run: |
+          git diff --exit-code
+        id: diff_files_after_js_build
+        continue-on-error: true
+      - name: Fail if changes are detected
+        if: steps.diff_files_after_js_build.outcome == 'failure'
+        run: |
+          echo "Detected uncommitted changes after running npm run build:js" \
+          "Please regenerate all JavaScript and commit changes." && exit 1
 
       # Try compile
       - name: Compile

@@ -1,0 +1,32 @@
+<!doctype html><html><head><title>
+</title><link rel=\"icon\" href=\"/public/favicon.ico\"><script defer src=\"https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js\"></script><script src=\"/public/htmx.js\"></script><script src=\"/public/dist.js\"></script><link rel=\"stylesheet\" href=\"/public/dist.css\"></head><body><div id=\"viewport\">
+</div></body></html>
+<div class=\"m-4\" x-data=\"pageIndex\"><div class=\"flex\"><h1 class=\"text-xl mr-4\">Todos</h1><form x-ref=\"formSearch\" action=\"/\" hx-trigger=\"input delay:200ms\" hx-target=\"#list\" hx-swap=\"outerHTML\" hx-get=\"/\"><input x-ref=\"inputSearch\" class=\"w-full\" name=\"term\" placeholder=\"Search\" value=\"
+\"></form></div><div class=\"mt-4\">
+</div></div>
+<li class=\"m-2\" hx-swap=\"outerHTML\" hx-include=\"[name=&#39;term&#39;]\"><form method=\"POST\" action=\"
+\" hx-post=\"
+\"><input type=\"hidden\" name=\"term\" value=\"
+\"> <input type=\"submit\" class=\"button-checkbox mr-2\"
+ value=\"✔\" class=\"checked\"
+ value=\"\"
+></form>
+<strike><span>
+</span></strike>
+<span>
+</span>
+<form method=\"POST\" action=\"
+\" hx-post=\"
+\"><input type=\"hidden\" name=\"term\" value=\"
+\"> <button class=\"ml-2\" type=\"submit\">Delete</button></form></li>
+<div id=\"list\">
+<p>No todos found</p>
+<p>Found 
+ todos </p>
+<p>No todos... let's add one!</p>
+<p>You're 
+% done!</p>
+<ul hx-target=\"#list\">
+</ul>
+<form method=\"POST\" action=\"/\" hx-post=\"/\" hx-target=\"#list\" class=\"mt-4 w-full flex\"><input x-ref=\"inputAddNew\" class=\"w-full\" type=\"text\" name=\"title\" placeholder=\"New Todo\"> <button class=\"ml-2 pl-2 pr-2\" type=\"submit\">Add</button></form>
+</div>

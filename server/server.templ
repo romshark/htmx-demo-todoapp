@@ -12,8 +12,9 @@ templ htmlMain(title string) {
 		<head>
 			<title>{ title }</title>
 			<link rel="icon" href="/public/favicon.ico"/>
+			<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 			<script src="/public/htmx.js"></script>
-			<script src="/public/surreal.js"></script>
+			<script src="/public/dist.js"></script>
 			<link rel="stylesheet" href="/public/dist.css"/>
 		</head>
 		<body>
@@ -26,10 +27,14 @@ templ htmlMain(title string) {
 
 templ pageIndex(todos []repository.Todo, searchTerm string) {
 	@htmlMain("Todos") {
-		<div class="m-4">
+		<div
+			class="m-4"
+			x-data="pageIndex"
+		>
 			<div class="flex">
 				<h1 class="text-xl mr-4">Todos</h1>
 				<form
+					x-ref="formSearch"
 					action="/"
 					hx-trigger="input delay:200ms"
 					hx-target="#list"
@@ -37,16 +42,12 @@ templ pageIndex(todos []repository.Todo, searchTerm string) {
 					hx-get="/"
 				>
 					<input
+						x-ref="inputSearch"
 						class="w-full"
 						name="term"
 						placeholder="Search"
 						value={ searchTerm }
 					/>
-					<script>
-						// Prevent submit on hitting the enter key
-						// when JavaScript is enabled.
-						me().action="javascript:void(0)"
-					</script>
 				</form>
 			</div>
 			<div class="mt-4">
@@ -126,6 +127,7 @@ templ comList(todos []repository.Todo, searchTerm string) {
 				class="mt-4 w-full flex"
 			>
 				<input
+					x-ref="inputAddNew"
 					class="w-full"
 					type="text"
 					name="title"
