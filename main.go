@@ -2,11 +2,11 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"log/slog"
 	"net/http"
 	"time"
 
+	"github.com/romshark/htmx-demo-todoapp/config"
 	"github.com/romshark/htmx-demo-todoapp/repository"
 	"github.com/romshark/htmx-demo-todoapp/server"
 )
@@ -18,8 +18,7 @@ func panicOnErr(err error) {
 }
 
 func main() {
-	fHost := flag.String("host", ":8080", "server host address")
-	flag.Parse()
+	conf := config.MustLoad("config.yaml")
 
 	repo, err := repository.NewRepository()
 	panicOnErr(err)
@@ -34,9 +33,9 @@ func main() {
 	_, err = repo.Add("Buy more cat food", false, time.Now())
 	panicOnErr(err)
 
-	s := server.New(repo)
-	slog.Info("listening", slog.String("host", *fHost))
-	if err := http.ListenAndServe(*fHost, s); err != nil {
+	s := server.New(repo, conf)
+	slog.Info("listening", slog.String("host", conf.Host))
+	if err := http.ListenAndServe(conf.Host, s); err != nil {
 		if !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("http server error", slog.Any("err", err))
 		}

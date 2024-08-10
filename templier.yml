@@ -38,9 +38,16 @@ custom-watchers:
     # reload browser after successful bundling
     requires: # no action, "Bundle Changed" will do the reloading
   - name: Bundle Changed
-    cmd: # Just reload
+    cmd: # Just rebuild
     include: ["server/public/*"]
     exclude:
     fail-on-error:
     debounce:
     requires: rebuild
+  - name: Server Config Changed
+    cmd: # Just restart
+    include: ["config.yaml"]
+    exclude:
+    fail-on-error:
+    debounce:
+    requires: restart

@@ -580,3 +580,12 @@ li::before {
     font-size: .5rem;
     text-align: center;
 }
+
+.non-interactable {
+    pointer-events: none;
+    animation: hx-eased-loading .4s forwards;
+}
+
+@keyframes hx-eased-loading {
+    to { opacity: .35; }
+}
