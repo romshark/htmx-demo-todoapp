@@ -1,0 +1,23 @@
+# httpsim.yml configures the github.com/romshark/httpsim HTTP middleware
+# which helps simulating realistic latency and HTTP errors.
+resources:
+  # Disable effects for HTMX search requests for term "fast".
+  - path: "/"
+    headers: { HX-Request: ["true"] }
+    query: { term: ["fast"] }
+    effect:
+  # Make HTMX search requests slow.
+  - path: "/"
+    headers:
+      HX-Request: ["true"]
+    effect:
+      delay:
+        min: 1s
+        max: 2s
+  # Make every other HTMX request realistically fast.
+  - path: "/*"
+    headers: { HX-Request: ["true"] }
+    effect:
+      delay:
+        min: 30ms
+        max: 300ms

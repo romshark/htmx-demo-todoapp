@@ -1,12 +1,15 @@
 module github.com/romshark/htmx-demo-todoapp
 
-go 1.22.5
+go 1.22.6
 
 require (
 	github.com/a-h/templ v0.2.747
 	github.com/blevesearch/bleve v1.0.14
+	github.com/romshark/httpsim v0.0.0-20240816222512-cc1132445910
 	github.com/romshark/yamagiconf v1.0.0
 )
+
+replace github.com/romshark/httpsim => ../httpsim/httpsim
 
 require (
 	github.com/PuerkitoBio/goquery v1.9.2 // indirect
@@ -30,10 +33,11 @@ require (
 	github.com/couchbase/vellum v1.0.2 // indirect
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/gabriel-vasile/mimetype v1.4.4 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.5 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.22.0 // indirect
+	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
@@ -55,9 +59,9 @@ require (
 	golang.org/x/mod v0.20.0 // indirect
 	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.23.0 // indirect
+	golang.org/x/sys v0.24.0 // indirect
 	golang.org/x/text v0.17.0 // indirect
-	golang.org/x/tools v0.23.0 // indirect
+	golang.org/x/tools v0.24.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

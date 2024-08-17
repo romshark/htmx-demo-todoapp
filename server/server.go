@@ -9,13 +9,12 @@ import (
 	"time"
 
 	"github.com/a-h/templ"
+	"github.com/romshark/httpsim"
 
-	"github.com/romshark/htmx-demo-todoapp/config"
-	"github.com/romshark/htmx-demo-todoapp/rand"
 	"github.com/romshark/htmx-demo-todoapp/repository"
 )
 
-// embedDirPublic Embeds the assets directory
+// embedDirPublic Embeds the public assets directory
 //
 //go:embed public/*
 var embedDirPublic embed.FS
@@ -31,16 +30,34 @@ func render(w http.ResponseWriter, r *http.Request, c templ.Component, name stri
 	}
 }
 
+func WithLog(s *Server) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		args := []any{
+			slog.String("method", r.Method),
+			slog.String("path", r.URL.Path),
+			slog.String("query", r.URL.Query().Encode()),
+		}
+		httpSimInfo := httpsim.CtxInfoValue(r.Context())
+		if httpSimInfo.MatchedResourceIndex != -1 {
+			args = append(args,
+				slog.Duration("simulate.delay", httpSimInfo.Delay),
+			)
+		}
+		slog.Info("access", args...)
+		// Handle request
+		s.ServeHTTP(w, r)
+	})
+}
+
 type Server struct {
 	mux  *http.ServeMux
 	repo *repository.Repository
-	conf *config.Config
 }
 
 var _ http.Handler = new(Server)
 
-func New(repo *repository.Repository, conf *config.Config) *Server {
-	s := &Server{repo: repo, conf: conf}
+func New(repo *repository.Repository) *Server {
+	s := &Server{repo: repo}
 	m := http.NewServeMux()
 
 	m.Handle("GET /public/", http.FileServer(http.FS(embedDirPublic)))
@@ -70,21 +87,6 @@ func New(repo *repository.Repository, conf *config.Config) *Server {
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	args := []any{
-		slog.String("method", r.Method),
-		slog.String("path", r.URL.Path),
-		slog.String("query", r.URL.Query().Encode()),
-	}
-	var delay time.Duration
-	if s.conf.Simulate.ResponseDelayMax != 0 {
-		delay = rand.Dur(
-			s.conf.Simulate.ResponseDelayMin,
-			s.conf.Simulate.ResponseDelayMax,
-		)
-		args = append(args, slog.Duration("simulate.delay", delay))
-	}
-	slog.Info("access", args...)
-	time.Sleep(delay)
 	s.mux.ServeHTTP(w, r)
 }
 
