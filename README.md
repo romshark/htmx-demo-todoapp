@@ -7,12 +7,17 @@
 
 ![todoapp_1](https://github.com/user-attachments/assets/789059b1-84d9-4694-b87c-5f7a32d63e64)
 
-
 # HTMX Tech-Demo - Todo App
 
 A simple todo application powered by [Go](https://go.dev/), [HTMX](https://htmx.org),
 [Templ](https://templ.guide), [TailwindCSS](https://tailwindcss.com/) and
 [Alpine.js](https://alpinejs.dev/).
+
+The server can be executed by simply running it in the root directory:
+
+```sh
+go run . -host=:8080
+```
 
 - **Graceful Degradation**: This app continues to provide limited core functionality
   even when JavaScript is disabled by utilizing
@@ -35,14 +40,12 @@ A simple todo application powered by [Go](https://go.dev/), [HTMX](https://htmx.
 
 ## Dev mode
 
-The server can be executed by simply running `go run . -host=:8080` in the root directory.
-
 Building the CSS bundle requires [Node.js](https://nodejs.org/) and `npm`
 to be installed on your system.
 
-Run `npm i` to download all JS dependencies.
+For interactive development mode with automatic live-reload using
+[Templiér](https://github.com/romshark/templier), simply run:
 
-For interactive development mode with automatic live-reload install
-[Templiér](https://github.com/romshark/templier)
-
-And run `templier --config templier.yml`
+```sh
+./dev.sh
+```
