@@ -6,7 +6,7 @@ require (
 	github.com/a-h/templ v0.2.778
 	github.com/blevesearch/bleve/v2 v2.4.2
 	github.com/romshark/httpsim v0.0.0-20240818102155-c8ad8cb4ed0e
-	github.com/romshark/templier v0.7.1
+	github.com/romshark/templier v0.7.2
 	github.com/romshark/yamagiconf v1.0.1
 )
 
