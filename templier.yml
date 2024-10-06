@@ -1,8 +1,10 @@
 proxy-timeout: 10s
 lint: true
 templier-host: "localhost:7331"
-print-js-debug-logs: true
-log: verbose
+log:
+  level: erronly
+  clear-on:
+  print-js-debug-logs: true
 debounce:
   templ: 50ms
   go: 50ms
@@ -10,7 +12,7 @@ tls:
 app:
   dir-src-root: "./"
   exclude:
-    - ".git*"
+    - ".*" # All hidden files.
     - "*~" # Any temporary backup files IDEs might use.
     - node_modules/*
     - eslint.config.mjs
@@ -46,7 +48,7 @@ custom-watchers:
     requires: rebuild
   - name: Server Config Changed
     cmd: # Just restart
-    include: ["config.yaml"]
+    include: ["config.yml"]
     exclude:
     fail-on-error:
     debounce:

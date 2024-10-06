@@ -1,4 +1,0 @@
-host: ":8080"
-simulate:
-  response-delay-min: 4s
-  response-delay-max: 6s

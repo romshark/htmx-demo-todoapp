@@ -10,6 +10,7 @@ import (
 	"github.com/romshark/httpsim"
 	httpsimconf "github.com/romshark/httpsim/config"
 
+	"github.com/romshark/htmx-demo-todoapp/config"
 	"github.com/romshark/htmx-demo-todoapp/repository"
 	"github.com/romshark/htmx-demo-todoapp/server"
 )
@@ -21,11 +22,7 @@ func panicOnErr(err error) {
 }
 
 func main() {
-	fHost := flag.String(
-		"host",
-		":8080",
-		"server host address",
-	)
+	conf := config.MustLoad("config.yml")
 	fHTTPSimConfig := flag.String(
 		"httpsim-conf",
 		"httpsim.yml",
@@ -59,8 +56,8 @@ func main() {
 		server.WithLog(s), *httpsimConf, httpsim.DefaultSleep, httpsim.DefaultRand,
 	)
 
-	slog.Info("listening", slog.String("host", *fHost))
-	if err := http.ListenAndServe(*fHost, withHTTPSim); err != nil {
+	slog.Info("listening", slog.String("host", conf.Host))
+	if err := http.ListenAndServe(conf.Host, withHTTPSim); err != nil {
 		if !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("http server error", slog.Any("err", err))
 		}
