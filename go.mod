@@ -6,7 +6,7 @@ require (
 	github.com/a-h/templ v0.2.778
 	github.com/blevesearch/bleve/v2 v2.4.2
 	github.com/romshark/httpsim v0.0.0-20240818102155-c8ad8cb4ed0e
-	github.com/romshark/templier v0.7.2
+	github.com/romshark/templier v0.7.5
 	github.com/romshark/yamagiconf v1.0.1
 )
 
@@ -15,7 +15,7 @@ require (
 	github.com/RoaringBitmap/roaring v1.9.4 // indirect
 	github.com/a-h/parse v0.0.0-20240121214402-3caf7543159a // indirect
 	github.com/a-h/protocol v0.0.0-20240821172110-e94e5c43897f // indirect
-	github.com/andybalholm/brotli v1.1.0 // indirect
+	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/bits-and-blooms/bitset v1.14.3 // indirect
 	github.com/blevesearch/bleve_index_api v1.1.12 // indirect
@@ -34,13 +34,13 @@ require (
 	github.com/blevesearch/zapx/v13 v13.3.10 // indirect
 	github.com/blevesearch/zapx/v14 v14.3.10 // indirect
 	github.com/blevesearch/zapx/v15 v15.3.13 // indirect
-	github.com/blevesearch/zapx/v16 v16.1.5 // indirect
+	github.com/blevesearch/zapx/v16 v16.1.6 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cli/browser v1.3.0 // indirect
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/gabriel-vasile/mimetype v1.4.5 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.6 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.22.1 // indirect
